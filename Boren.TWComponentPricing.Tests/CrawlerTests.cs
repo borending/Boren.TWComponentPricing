@@ -17,9 +17,9 @@ namespace Boren.TWComponentPricing.Tests
 
 
         [Test]
-        public void Test1()
+        public async Task Test1()
         {
-            _crawlerService.GetAsync();
+            var list = await _crawlerService.GetAsync();
         }
     }
 }

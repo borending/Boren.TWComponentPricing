@@ -1,4 +1,5 @@
-﻿using PuppeteerSharp;
+﻿using HtmlAgilityPack;
+using PuppeteerSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace Boren.TWComponentPricing.Worker.Service
     {
         private const string COOLPC_URL = "https://www.coolpc.com.tw/evaluate.php";
 
-        private async Task<(Browser Browser, Page Page)> GetPuppeteerAsync()
+        private async Task<(Browser Browser, Page Page)> GetWebAsync()
         {
             await new BrowserFetcher().DownloadAsync();
             var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = false });
@@ -24,7 +25,21 @@ namespace Boren.TWComponentPricing.Worker.Service
 
         public async Task<IList<object>> GetAsync()
         {
-            var web = await this.GetPuppeteerAsync();
+            var web = await this.GetWebAsync();
+            await web.Page.WaitForTimeoutAsync(3000);
+
+            var html = await web.Page.GetContentAsync();
+            var document = new HtmlDocument();
+            document.LoadHtml(html);
+
+            var trs = document.DocumentNode.SelectNodes("#tbdy tr");
+            foreach(var tr in trs)
+            {
+                var title = tr.ChildNodes.SingleOrDefault(c => c.HasClass("t"));
+                //var title = (await tr.("td.t"));
+            }
+
+            // table id : Tfix
             throw new NotImplementedException();
         }
     }
