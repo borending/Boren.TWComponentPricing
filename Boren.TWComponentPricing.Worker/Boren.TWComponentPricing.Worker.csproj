@@ -5,8 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
-    <Folder Include="Service\" />
+    <PackageReference Include="PuppeteerSharp" Version="5.0.0" />
   </ItemGroup>
 
 </Project>

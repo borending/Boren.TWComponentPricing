@@ -13,4 +13,9 @@
     <PackageReference Include="coverlet.collector" Version="3.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Boren.TWComponentPricing.Worker\Boren.TWComponentPricing.Worker.csproj" />
+    <ProjectReference Include="..\Boren.TWComponentPricing\Boren.TWComponentPricing.csproj" />
+  </ItemGroup>
+
 </Project>
