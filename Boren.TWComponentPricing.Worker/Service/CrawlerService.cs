@@ -10,7 +10,7 @@ namespace Boren.TWComponentPricing.Worker.Service
     {
         private const string COOLPC_URL = "https://www.coolpc.com.tw/evaluate.php";
 
-        private async Task<(Browser, Page)> GetPuppeteerAsync()
+        private async Task<(Browser Browser, Page Page)> GetPuppeteerAsync()
         {
             await new BrowserFetcher().DownloadAsync();
             var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = false });
