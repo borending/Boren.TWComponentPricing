@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using Boren.TWComponentPricing.Model;
+using HtmlAgilityPack;
 using PuppeteerSharp;
 using System;
 using System.Collections.Generic;
@@ -23,13 +24,14 @@ namespace Boren.TWComponentPricing.Worker.Service
             return (browser, page);
         }
 
-        public async Task<IList<object>> GetAsync()
+        public async Task<IList<ItemViewModel>> GetAsync()
         {
             // DOM 操作
             var web = await this.GetWebAsync();
             await web.Page.WaitForTimeoutAsync(1000);
 
             // 商品類別 #tbdy tr
+            var models = new List<ItemViewModel>();
             var categories = await web.Page.QuerySelectorAllAsync("#tbdy tr");
             foreach (var category in categories)
             {
@@ -41,17 +43,35 @@ namespace Boren.TWComponentPricing.Worker.Service
                 // 2021.08.17 
                 // todo: 把列表轉換成物件
                 // todo: 資料庫結構規劃
-                var itemNames = new List<string>();
+                var parentValue = 0;
                 foreach (var item in items)
                 {
-                    var text = await item.EvaluateFunctionAsync<string>("e => e.innerHTML");
-                    var clss = await (await item.GetPropertyAsync("className")).JsonValueAsync<string>();
-                    itemNames.Add(text);
+                    var model = new ItemViewModel
+                    {
+                        Categroy = categoryName,
+                        Value = await item.EvaluateFunctionAsync<int>("e => e.value"),
+                        Text = await item.EvaluateFunctionAsync<string>("e => e.innerHTML"),
+                        ClassName = await item.EvaluateFunctionAsync<string>("e => e.className")
+                    };
+                    if (model.Text.IndexOf("↪") == -1)
+                        parentValue = model.Value;
+                    else
+                        model.ParentValue = parentValue;
+                    models.Add(model);
                 }
+
+                break;
             }
 
-            // table id : Tfix
-            throw new NotImplementedException();
+
+            foreach (var model in models)
+            {
+                if (model.ParentValue.HasValue)
+                    Console.Write("　");
+                Console.WriteLine($"{model.Text}");
+            }
+
+            return models;
         }
     }
 }
