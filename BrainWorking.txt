@@ -1,0 +1,32 @@
+-- Data 操作 --
+Microsoft.EntityFrameworkCore.Tools
+Npgsql.EntityFrameworkCore.PostgreSQL
+-- 列出所有Table
+SELECT concat('"', table_name , '",') FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';
+-- 生出Entity
+Scaffold-DbContext "Host=127.0.0.1;Database=Pricing;Username=postgres" Npgsql.EntityFrameworkCore.PostgreSQL -Tables "Categroy","Product","Brand","Price" -UseDatabaseNames -Context PricingDbContext -Force
+
+
+-- 結構分析 --
+品名 與 價錢，會用半形逗號 , 隔開
+
+class
+r	熱賣
+g	價格異動
+b	熱賣 + 價格異動
+
+◆	開箱討論
+★	參考圖片
+
+
+品名, $19800↘$14990
+HP Reverb G2 VR 頭戴式顯示器(不含到府安裝), $22900 ◆ ★
+微星 Cubi 5 10M [027BTW] Intel i7-10510U (SSD.RAM.HDD.OS選購), $18900↘$17500 ◆ ★
+
+
+
+
+-- 功能分析 --
+
+主功能流程 
+下filter (類別 或 名稱) -> show 列表 -> 選品項 -> show 歷史價格 chart + grid

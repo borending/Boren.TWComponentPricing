@@ -3,7 +3,9 @@ using HtmlAgilityPack;
 using PuppeteerSharp;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Boren.TWComponentPricing.Worker.Service
@@ -30,47 +32,47 @@ namespace Boren.TWComponentPricing.Worker.Service
             var web = await this.GetWebAsync();
             await web.Page.WaitForTimeoutAsync(1000);
 
+            var builder = new StringBuilder();
+
             // 商品類別 #tbdy tr
             var models = new List<ItemViewModel>();
             var categories = await web.Page.QuerySelectorAllAsync("#tbdy tr");
-            foreach (var category in categories)
+            try
             {
-                // 類別名稱 tr.t
-                var categoryName = await category.QuerySelectorAsync(".t").EvaluateFunctionAsync<string>("e => e.innerHTML");
-                // 商品 td select.s optgroup option
-                var items = await category.QuerySelectorAllAsync("td select.s optgroup option");
-
-                // 2021.08.17 
-                // todo: 把列表轉換成物件
-                // todo: 資料庫結構規劃
-                var parentValue = 0;
-                foreach (var item in items)
+                foreach (var category in categories)
                 {
-                    var model = new ItemViewModel
+                    // 類別名稱 tr.t
+                    var categoryName = await category.QuerySelectorAsync(".t").EvaluateFunctionAsync<string>("e => e.innerHTML");
+                    // 商品 td select.s optgroup option
+                    var items = await category.QuerySelectorAllAsync("td select.s optgroup option");
+
+                    builder.AppendLine(categoryName);
+
+                    // 2021.08.17 
+                    // todo: 資料庫結構規劃
+                    var parentValue = 0;
+                    foreach (var item in items)
                     {
-                        Categroy = categoryName,
-                        Value = await item.EvaluateFunctionAsync<int>("e => e.value"),
-                        Text = await item.EvaluateFunctionAsync<string>("e => e.innerHTML"),
-                        ClassName = await item.EvaluateFunctionAsync<string>("e => e.className")
-                    };
-                    if (model.Text.IndexOf("↪") == -1)
-                        parentValue = model.Value;
-                    else
-                        model.ParentValue = parentValue;
-                    models.Add(model);
+                        var model = new ItemViewModel
+                        {
+                            Categroy = categoryName,
+                            Value = await item.EvaluateFunctionAsync<int>("e => e.value"),
+                            Text = await item.EvaluateFunctionAsync<string>("e => e.innerHTML"),
+                            ClassName = await item.EvaluateFunctionAsync<string>("e => e.className")
+                        };
+                        if (model.Text.IndexOf("↪") == -1)
+                            parentValue = model.Value;
+                        else
+                            model.ParentValue = parentValue;
+                        models.Add(model);
+
+                        builder.AppendLine(model.Text);
+                    }
                 }
-
-                break;
             }
+            catch { }
 
-
-            foreach (var model in models)
-            {
-                if (model.ParentValue.HasValue)
-                    Console.Write("　");
-                Console.WriteLine($"{model.Text}");
-            }
-
+            File.WriteAllText(@"C:\Test\example.txt", builder.ToString());
             return models;
         }
     }
