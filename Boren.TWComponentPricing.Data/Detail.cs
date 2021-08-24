@@ -5,12 +5,13 @@ using System.Collections.Generic;
 
 namespace Boren.TWComponentPricing.Data
 {
-    public partial class Price
+    public partial class Detail
     {
         public int Id { get; set; }
         public int ProductId { get; set; }
-        public decimal Price1 { get; set; }
+        public decimal Price { get; set; }
         public DateTime DateTime { get; set; }
+        public string[] Remarks { get; set; }
 
         public virtual Product Product { get; set; }
     }

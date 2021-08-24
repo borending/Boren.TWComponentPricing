@@ -19,7 +19,7 @@ namespace Boren.TWComponentPricing.Data
 
         public virtual DbSet<Brand> Brands { get; set; }
         public virtual DbSet<Categroy> Categroys { get; set; }
-        public virtual DbSet<Price> Prices { get; set; }
+        public virtual DbSet<Detail> Details { get; set; }
         public virtual DbSet<Product> Products { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -40,20 +40,22 @@ namespace Boren.TWComponentPricing.Data
                 entity.Property(e => e.Name).HasMaxLength(128);
             });
 
-            modelBuilder.Entity<Price>(entity =>
+            modelBuilder.Entity<Detail>(entity =>
             {
-                entity.ToTable("Price");
+                entity.ToTable("Detail");
+
+                entity.Property(e => e.Id).HasDefaultValueSql("nextval('\"Price_Id_seq\"'::regclass)");
 
                 entity.Property(e => e.DateTime).HasColumnType("date");
 
-                entity.Property(e => e.Price1)
-                    .HasPrecision(10, 2)
-                    .HasColumnName("Price");
+                entity.Property(e => e.Price).HasPrecision(10, 2);
+
+                entity.Property(e => e.Remarks).HasColumnType("character varying[]");
 
                 entity.HasOne(d => d.Product)
-                    .WithMany(p => p.Prices)
+                    .WithMany(p => p.Details)
                     .HasForeignKey(d => d.ProductId)
-                    .HasConstraintName("Price_ProductId_fkey");
+                    .HasConstraintName("Detail_ProductId_fkey");
             });
 
             modelBuilder.Entity<Product>(entity =>

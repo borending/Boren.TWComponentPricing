@@ -9,7 +9,7 @@ namespace Boren.TWComponentPricing.Data
     {
         public Product()
         {
-            Prices = new HashSet<Price>();
+            Details = new HashSet<Detail>();
         }
 
         public int Id { get; set; }
@@ -20,6 +20,6 @@ namespace Boren.TWComponentPricing.Data
 
         public virtual Brand Brand { get; set; }
         public virtual Categroy Categroy { get; set; }
-        public virtual ICollection<Price> Prices { get; set; }
+        public virtual ICollection<Detail> Details { get; set; }
     }
 }
