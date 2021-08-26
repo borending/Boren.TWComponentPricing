@@ -1,11 +1,12 @@
 ﻿using Boren.TWComponentPricing.Model;
-using HtmlAgilityPack;
+using Boren.TWComponentPricing.Service;
 using PuppeteerSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Boren.TWComponentPricing.Worker.Service
@@ -26,16 +27,14 @@ namespace Boren.TWComponentPricing.Worker.Service
             return (browser, page);
         }
 
-        public async Task<IList<ItemViewModel>> GetAsync()
+        public async Task<IList<Data.Product>> GetAsync()
         {
             // DOM 操作
             var web = await this.GetWebAsync();
             await web.Page.WaitForTimeoutAsync(1000);
 
-            var builder = new StringBuilder();
-
             // 商品類別 #tbdy tr
-            var models = new List<ItemViewModel>();
+            var entities = new List<Data.Product>();
             var categories = await web.Page.QuerySelectorAllAsync("#tbdy tr");
             try
             {
@@ -43,37 +42,56 @@ namespace Boren.TWComponentPricing.Worker.Service
                 {
                     // 類別名稱 tr.t
                     var categoryName = await category.QuerySelectorAsync(".t").EvaluateFunctionAsync<string>("e => e.innerHTML");
-                    // 商品 td select.s optgroup option
-                    var items = await category.QuerySelectorAllAsync("td select.s optgroup option");
+                    // 商品群組 td select.s optgroup
+                    var groups = await category.QuerySelectorAllAsync("td select.s optgroup");
 
-                    builder.AppendLine(categoryName);
-
-                    // 2021.08.17 
-                    // todo: 資料庫結構規劃
-                    var parentValue = 0;
-                    foreach (var item in items)
+                    foreach (var group in groups)
                     {
-                        var model = new ItemViewModel
+                        Data.Detail pointer = null;
+                        var items = await group.QuerySelectorAllAsync("option");
+                        foreach (var item in items)
                         {
-                            Categroy = categoryName,
-                            Value = await item.EvaluateFunctionAsync<int>("e => e.value"),
-                            Text = await item.EvaluateFunctionAsync<string>("e => e.innerHTML"),
-                            ClassName = await item.EvaluateFunctionAsync<string>("e => e.className")
-                        };
-                        if (model.Text.IndexOf("↪") == -1)
-                            parentValue = model.Value;
-                        else
-                            model.ParentValue = parentValue;
-                        models.Add(model);
+                            var text = await item.EvaluateFunctionAsync<string>("e => e.innerHTML");
+                            // 如果沒縮排且有寫金額，視為商品
+                            if (text.IndexOf("↪") == -1 && Regex.IsMatch(text, @"$\d+"))
+                            {
+                                var attr = await item.EvaluateFunctionAsync<string>("e => e.className");
+                                var className = string.IsNullOrEmpty(attr) ? null : attr;
 
-                        builder.AppendLine(model.Text);
+                                var detail = new Data.Detail
+                                {
+                                    Price = Convert.ToDecimal(Regex.Matches(text, @"$\d+").Last()),
+                                    DateTime = DateTime.Today,
+                                    FeatureType = Common.GetType(className)
+                                };
+                                pointer = detail;
+                                var product = new Data.Product
+                                {
+                                    OriginText = text,
+                                    Categroy = new Data.Categroy { Name = categoryName },
+                                    FixedText = text.Substring(0, text.IndexOf(",")),
+                                    Details = new List<Data.Detail> { detail }
+                                };
+
+                                entities.Add(product);
+                            }
+                            else
+                            {
+                                IList<string> list = pointer.Remarks != null ? pointer.Remarks.ToList() : new List<string>();
+                                list.Add(text);
+                                pointer.Remarks = list.ToArray();
+                            }
+                        }
+
                     }
                 }
             }
-            catch { }
+            catch (Exception e)
+            {
+                var tt = e.Message;
+            }
 
-            File.WriteAllText(@"C:\Test\example.txt", builder.ToString());
-            return models;
+            return entities;
         }
     }
 }

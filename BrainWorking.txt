@@ -7,6 +7,14 @@ SELECT concat('"', table_name , '",') FROM information_schema.tables WHERE table
 Scaffold-DbContext "Host=127.0.0.1;Database=Pricing;Username=postgres" Npgsql.EntityFrameworkCore.PostgreSQL -Tables "Categroy","Product","Brand","Detail" -UseDatabaseNames -Context PricingDbContext -Force
 
 
+-- 流程 -- 
+每天排程抓資料
+抓回本地端先整理成entity
+先用現有資料比對新資料，如果沒有這個商品就先Disable
+再比對現有資料，Create or Update
+
+
+
 -- 結構分析 --
 品名 與 價錢，會用半形逗號 , 隔開
 

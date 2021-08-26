@@ -5,10 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Service\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Boren.TWComponentPricing.Data\Boren.TWComponentPricing.Data.csproj" />
   </ItemGroup>
 
