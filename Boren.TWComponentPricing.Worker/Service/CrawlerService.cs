@@ -35,60 +35,89 @@ namespace Boren.TWComponentPricing.Worker.Service
 
             // 商品類別 #tbdy tr
             var entities = new List<Data.Product>();
-            var categories = await web.Page.QuerySelectorAllAsync("#tbdy tr");
-            try
+            var categories = await web.Page.QuerySelectorAllAsync("#tbdy > tr");
+
+            foreach (var category in categories)
             {
-                foreach (var category in categories)
+                try
                 {
                     // 類別名稱 tr.t
+                    try
+                    {
+                        var rr = category.JsonValueAsync().Result;
+                        var tt2 = await category.QuerySelectorAsync(".t");
+                        var categoryName2 = await tt2.EvaluateFunctionAsync<string>("e => e.innerHTML");
+                    }
+                    catch (Exception e)
+                    {
+                        var tt = e.Message;
+                    }
+
                     var categoryName = await category.QuerySelectorAsync(".t").EvaluateFunctionAsync<string>("e => e.innerHTML");
                     // 商品群組 td select.s optgroup
                     var groups = await category.QuerySelectorAllAsync("td select.s optgroup");
 
                     foreach (var group in groups)
                     {
-                        Data.Detail pointer = null;
-                        var items = await group.QuerySelectorAllAsync("option");
-                        foreach (var item in items)
+                        try
                         {
-                            var text = await item.EvaluateFunctionAsync<string>("e => e.innerHTML");
-                            // 如果沒縮排且有寫金額，視為商品
-                            if (text.IndexOf("↪") == -1 && Regex.IsMatch(text, @"$\d+"))
+                            Data.Detail pointer = null;
+                            var items = await group.QuerySelectorAllAsync("option");
+                            foreach (var item in items)
                             {
-                                var attr = await item.EvaluateFunctionAsync<string>("e => e.className");
-                                var className = string.IsNullOrEmpty(attr) ? null : attr;
-
-                                var detail = new Data.Detail
+                                string text;
+                                try
                                 {
-                                    Price = Convert.ToDecimal(Regex.Matches(text, @"$\d+").Last()),
-                                    DateTime = DateTime.Today,
-                                    FeatureType = Common.GetType(className)
-                                };
-                                pointer = detail;
-                                var product = new Data.Product
-                                {
-                                    OriginText = text,
-                                    Categroy = new Data.Categroy { Name = categoryName },
-                                    FixedText = text.Substring(0, text.IndexOf(",")),
-                                    Details = new List<Data.Detail> { detail }
-                                };
+                                    // todo: 廣告字樣如何分辨
 
-                                entities.Add(product);
-                            }
-                            else
-                            {
-                                IList<string> list = pointer.Remarks != null ? pointer.Remarks.ToList() : new List<string>();
-                                list.Add(text);
-                                pointer.Remarks = list.ToArray();
+                                    text = await item.EvaluateFunctionAsync<string>("e => e.innerHTML");
+                                    // 如果沒縮排且有寫金額，視為商品
+                                    if (text.IndexOf("↪") == -1 && Regex.IsMatch(text, @"\$\d+"))
+                                    {
+                                        var attr = await item.EvaluateFunctionAsync<string>("e => e.className");
+                                        var className = string.IsNullOrEmpty(attr) ? null : attr;
+                                        var price = Regex.Matches(text, @"\$\d+").Last().Value;
+                                        var detail = new Data.Detail
+                                        {
+                                            Price = Convert.ToDecimal(price.Replace("$", "")),
+                                            DateTime = DateTime.Today,
+                                            FeatureType = Common.GetType(className)
+                                        };
+                                        pointer = detail;
+                                        var product = new Data.Product
+                                        {
+                                            OriginText = text,
+                                            Categroy = new Data.Categroy { Name = categoryName },
+                                            FixedText = text.Substring(0, text.IndexOf(",")),
+                                            Details = new List<Data.Detail> { detail }
+                                        };
+
+                                        entities.Add(product);
+                                    }
+                                    else if (pointer != null)
+                                    {
+                                        IList<string> list = pointer.Remarks != null ? pointer.Remarks.ToList() : new List<string>();
+                                        text = text.TrimStart().Replace("↪", "");
+                                        list.Add(text);
+                                        pointer.Remarks = list.ToArray();
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    var tt = e.Message;
+                                }
                             }
                         }
-
+                        catch (Exception e)
+                        {
+                            var tt = e.Message;
+                        }
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                var tt = e.Message;
+                catch (Exception e)
+                {
+                    var tt = e.Message;
+                }
             }
 
             return entities;
