@@ -1,9 +1,9 @@
-﻿using Boren.TWComponentPricing.Model;
+﻿using AngleSharp;
+using AngleSharp.Html.Parser;
 using Boren.TWComponentPricing.Service;
 using PuppeteerSharp;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -35,88 +35,82 @@ namespace Boren.TWComponentPricing.Worker.Service
 
             // 商品類別 #tbdy tr
             var entities = new List<Data.Product>();
-            var categories = await web.Page.QuerySelectorAllAsync("#tbdy > tr");
 
+            var context = BrowsingContext.New(Configuration.Default);
+            var parser = context.GetService<IHtmlParser>();
+            var document = parser.ParseDocument(await web.Page.GetContentAsync());
+
+            var builder = new StringBuilder();
+            var categories = document.QuerySelectorAll("#tbdy > tr");
             foreach (var category in categories)
             {
+                builder.Clear();
+
                 try
                 {
-                    // 類別名稱 tr.t
-                    try
-                    {
-                        var rr = category.JsonValueAsync().Result;
-                        var tt2 = await category.QuerySelectorAsync(".t");
-                        var categoryName2 = await tt2.EvaluateFunctionAsync<string>("e => e.innerHTML");
-                    }
-                    catch (Exception e)
-                    {
-                        var tt = e.Message;
-                    }
+                    var categoryName = category.QuerySelector(".t").InnerHtml;
+                    builder.AppendLine($"categoryName: {categoryName}");
 
-                    var categoryName = await category.QuerySelectorAsync(".t").EvaluateFunctionAsync<string>("e => e.innerHTML");
                     // 商品群組 td select.s optgroup
-                    var groups = await category.QuerySelectorAllAsync("td select.s optgroup");
-
+                    var groups = category.QuerySelectorAll("td select.s optgroup");
                     foreach (var group in groups)
                     {
-                        try
+                        Data.Detail pointer = null;
+                        var items = group.QuerySelectorAll("option");
+                        foreach (var item in items)
                         {
-                            Data.Detail pointer = null;
-                            var items = await group.QuerySelectorAllAsync("option");
-                            foreach (var item in items)
+                            var disabled = item.HasAttribute("disabled");
+                            string text = item.InnerHtml;
+                            builder.AppendLine($"item OriginText: {text}");
+                            // 如果沒箭頭且有寫金額，視為商品
+                            if (text.IndexOf("↪") == -1 && Regex.IsMatch(text, @"\$\d+"))
                             {
-                                string text;
-                                try
+                                if (disabled)
                                 {
-                                    // todo: 廣告字樣如何分辨
-
-                                    text = await item.EvaluateFunctionAsync<string>("e => e.innerHTML");
-                                    // 如果沒縮排且有寫金額，視為商品
-                                    if (text.IndexOf("↪") == -1 && Regex.IsMatch(text, @"\$\d+"))
-                                    {
-                                        var attr = await item.EvaluateFunctionAsync<string>("e => e.className");
-                                        var className = string.IsNullOrEmpty(attr) ? null : attr;
-                                        var price = Regex.Matches(text, @"\$\d+").Last().Value;
-                                        var detail = new Data.Detail
-                                        {
-                                            Price = Convert.ToDecimal(price.Replace("$", "")),
-                                            DateTime = DateTime.Today,
-                                            FeatureType = Common.GetType(className)
-                                        };
-                                        pointer = detail;
-                                        var product = new Data.Product
-                                        {
-                                            OriginText = text,
-                                            Categroy = new Data.Categroy { Name = categoryName },
-                                            FixedText = text.Substring(0, text.IndexOf(",")),
-                                            Details = new List<Data.Detail> { detail }
-                                        };
-
-                                        entities.Add(product);
-                                    }
-                                    else if (pointer != null)
-                                    {
-                                        IList<string> list = pointer.Remarks != null ? pointer.Remarks.ToList() : new List<string>();
-                                        text = text.TrimStart().Replace("↪", "");
-                                        list.Add(text);
-                                        pointer.Remarks = list.ToArray();
-                                    }
+                                    // 如果disabled 就是無效商品，要把pointer 清掉，並繼續下一步驟
+                                    pointer = null;
+                                    continue;
                                 }
-                                catch (Exception e)
+
+                                var className = string.IsNullOrEmpty(item.ClassName) ? null : item.ClassName;
+                                // 可能有多個價錢，只記錄最後一個
+                                var price = Regex.Matches(text, @"\$\d+").Last().Value;
+                                var detail = new Data.Detail
                                 {
-                                    var tt = e.Message;
-                                }
+                                    Price = Convert.ToDecimal(price.Replace("$", "")),
+                                    DateTime = DateTime.Today,
+                                    FeatureType = Common.GetType(className)
+                                };
+                                pointer = detail;
+                                var product = new Data.Product
+                                {
+                                    OriginText = text,
+                                    Categroy = new Data.Categroy { Name = categoryName },
+                                    FixedText = text.Substring(0, text.IndexOf(",")),
+                                    Details = new List<Data.Detail> { detail }
+                                };
+
+                                entities.Add(product);
                             }
-                        }
-                        catch (Exception e)
-                        {
-                            var tt = e.Message;
+                            else if (text.IndexOf("↪") != -1 && disabled && pointer != null)
+                            {
+                                // 如果有箭頭又是disabled 就是為贈品，加入Remarks
+                                IList<string> list = pointer.Remarks != null ? pointer.Remarks.ToList() : new List<string>();
+                                text = text.TrimStart().Replace("↪", "");
+                                list.Add(text);
+                                pointer.Remarks = list.ToArray();
+                            }
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    var tt = e.Message;
+                    builder.AppendLine(e.Message);
+                    builder.AppendLine(e.StackTrace);
+                    if (e.InnerException != null)
+                        builder.AppendLine(e.InnerException.Message);
+
+                    return null;
                 }
             }
 
