@@ -21,6 +21,8 @@ namespace Boren.TWComponentPricing.Data
         public virtual DbSet<Categroy> Categroys { get; set; }
         public virtual DbSet<Detail> Details { get; set; }
         public virtual DbSet<Product> Products { get; set; }
+        public virtual DbSet<Promotion> Promotions { get; set; }
+        public virtual DbSet<PromotionProduct> PromotionProducts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -50,7 +52,7 @@ namespace Boren.TWComponentPricing.Data
 
                 entity.Property(e => e.Price).HasPrecision(10, 2);
 
-                entity.Property(e => e.Remarks).HasColumnType("character varying[]");
+                entity.Property(e => e.Remarks).HasColumnType("character varying(255)[]");
 
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.Details)
@@ -79,6 +81,39 @@ namespace Boren.TWComponentPricing.Data
                     .HasForeignKey(d => d.CategroyId)
                     .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("Product_CategroyId_fkey");
+            });
+
+            modelBuilder.Entity<Promotion>(entity =>
+            {
+                entity.ToTable("Promotion");
+
+                entity.Property(e => e.FixedText).HasMaxLength(128);
+
+                entity.Property(e => e.OriginText).HasMaxLength(128);
+
+                entity.HasOne(d => d.Detail)
+                    .WithMany(p => p.Promotions)
+                    .HasForeignKey(d => d.DetailId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("Promotion_DetailId_fkey");
+            });
+
+            modelBuilder.Entity<PromotionProduct>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("PromotionProduct");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany()
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("PromotionProduct_ProductId_fkey");
+
+                entity.HasOne(d => d.Promotion)
+                    .WithMany()
+                    .HasForeignKey(d => d.PromotionId)
+                    .HasConstraintName("PromotionProduct_PromotionId_fkey");
             });
 
             OnModelCreatingPartial(modelBuilder);

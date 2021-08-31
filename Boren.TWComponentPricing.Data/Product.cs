@@ -17,6 +17,7 @@ namespace Boren.TWComponentPricing.Data
         public int CategroyId { get; set; }
         public int? BrandId { get; set; }
         public string FixedText { get; set; }
+        public bool Disable { get; set; }
 
         public virtual Brand Brand { get; set; }
         public virtual Categroy Categroy { get; set; }
