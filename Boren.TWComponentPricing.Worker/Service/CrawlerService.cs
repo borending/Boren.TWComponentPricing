@@ -31,6 +31,8 @@ namespace Boren.TWComponentPricing.Worker.Service
 
         public async Task<IList<Data.Product>> GetAsync()
         {
+            // todo: 決定要取哪一個分類
+
             // DOM 操作
             var web = await this.GetWebAsync();
             await web.Page.WaitForTimeoutAsync(1000);
@@ -50,8 +52,14 @@ namespace Boren.TWComponentPricing.Worker.Service
 
                 try
                 {
-                    var categoryName = category.QuerySelector(".t").InnerHtml;
+                    var categoryNumber = Convert.ToInt16(category.QuerySelector(".w").TextContent);
+                    var categoryName = category.QuerySelector(".t").TextContent;
                     builder.AppendLine($"categoryName: {categoryName}");
+
+                    if (Convert.ToInt32(categoryNumber) != 4)
+                        continue;
+
+                    var categroy = new Categroy { Number = categoryNumber, Name = categoryName };
 
                     // 商品群組 td select.s optgroup
                     var groups = category.QuerySelectorAll("td select.s optgroup");
@@ -62,10 +70,10 @@ namespace Boren.TWComponentPricing.Worker.Service
                         foreach (var item in items)
                         {
                             var disabled = item.HasAttribute("disabled");
-                            string text = item.InnerHtml;
+                            string text = item.TextContent;
                             builder.AppendLine($"item OriginText: {text}");
                             // 如果沒箭頭且有寫金額，視為商品
-                            if (text.IndexOf("↪") == -1 && Regex.IsMatch(text, @"\$\d+"))
+                            if (!text.Contains("↪") && Regex.IsMatch(text, @"\$\d+"))
                             {
                                 if (disabled)
                                 {
@@ -77,7 +85,7 @@ namespace Boren.TWComponentPricing.Worker.Service
                                 var className = string.IsNullOrEmpty(item.ClassName) ? null : item.ClassName;
                                 // 可能有多個價錢，只記錄最後一個
                                 var price = Regex.Matches(text, @"\$\d+").Last().Value;
-                                var detail = new Data.Detail
+                                var detail = new Detail
                                 {
                                     Price = Convert.ToDecimal(price.Replace("$", "")),
                                     DateTime = DateTime.Today,
@@ -87,9 +95,9 @@ namespace Boren.TWComponentPricing.Worker.Service
                                 var product = new Data.Product
                                 {
                                     OriginText = text,
-                                    Categroy = new Data.Categroy { Name = categoryName },
-                                    FixedText = text.Substring(0, text.IndexOf(",")),
-                                    Details = new List<Data.Detail> { detail }
+                                    Categroy = categroy,
+                                    //FixedText = text.Substring(0, text.IndexOf(",")),
+                                    Details = new List<Detail> { detail }
                                 };
 
                                 entities.Add(product);
@@ -101,6 +109,11 @@ namespace Boren.TWComponentPricing.Worker.Service
                                 text = text.TrimStart().Replace("↪", "");
                                 list.Add(text);
                                 pointer.Remarks = list.ToArray();
+                            }
+                            else if (pointer == null)
+                            {
+                                // 如果沒有pointer ，又是disable，那應該是促銷內容
+                                // 再看要怎麼紀錄
                             }
                         }
                     }
@@ -119,7 +132,7 @@ namespace Boren.TWComponentPricing.Worker.Service
             return entities;
         }
 
-        public Task SetAsync(IList<Data.Product> products)
+        public async Task SetAsync(IList<Data.Product> products)
         {
             var dbContext = new PricingDbContext();
             var existProducts = dbContext.Products.Include("Categroy").Include("Details").Select(x => x).ToList();
@@ -133,10 +146,20 @@ namespace Boren.TWComponentPricing.Worker.Service
                 }
                 else
                 {
-
+                    dbContext.Add(product);
                 }
             }
-            throw new NotImplementedException();
+
+            var result = false;
+            try
+            {
+                await dbContext.SaveChangesAsync();
+                result = true;
+            }
+            catch(Exception e)
+            {
+
+            }
         }
     }
 }

@@ -32,6 +32,8 @@ namespace Boren.TWComponentPricing.Data
             {
                 entity.ToTable("Brand");
 
+                entity.HasComment("品牌");
+
                 entity.Property(e => e.Name).HasMaxLength(128);
             });
 
@@ -39,12 +41,18 @@ namespace Boren.TWComponentPricing.Data
             {
                 entity.ToTable("Categroy");
 
-                entity.Property(e => e.Name).HasMaxLength(128);
+                entity.HasComment("分類");
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<Detail>(entity =>
             {
                 entity.ToTable("Detail");
+
+                entity.HasComment("詳細價格");
 
                 entity.Property(e => e.Id).HasDefaultValueSql("nextval('\"Price_Id_seq\"'::regclass)");
 
@@ -63,6 +71,8 @@ namespace Boren.TWComponentPricing.Data
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.ToTable("Product");
+
+                entity.HasComment("產品");
 
                 entity.Property(e => e.FixedText).HasMaxLength(128);
 
@@ -87,6 +97,8 @@ namespace Boren.TWComponentPricing.Data
             {
                 entity.ToTable("Promotion");
 
+                entity.HasComment("促銷");
+
                 entity.Property(e => e.FixedText).HasMaxLength(128);
 
                 entity.Property(e => e.OriginText).HasMaxLength(128);
@@ -103,6 +115,8 @@ namespace Boren.TWComponentPricing.Data
                 entity.HasNoKey();
 
                 entity.ToTable("PromotionProduct");
+
+                entity.HasComment("促銷關聯");
 
                 entity.HasOne(d => d.Product)
                     .WithMany()

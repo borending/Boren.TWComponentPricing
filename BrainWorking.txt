@@ -6,27 +6,41 @@ SELECT concat('"', table_name , '",') FROM information_schema.tables WHERE table
 -- 生出Entity
 Scaffold-DbContext "Host=127.0.0.1;Database=Pricing;Username=postgres" Npgsql.EntityFrameworkCore.PostgreSQL -Tables "Categroy","Product","Brand","Detail","Promotion","PromotionProduct" -UseDatabaseNames -Context PricingDbContext -Force
 
-// 本程式預計的功能
+## 目標功能
+1. 查詢單一品項目前價格/歷史價格
+2. 查詢目前優惠最多的品項
+3. 可以登入追蹤，設定品項特價通知
+4. 目前有做促銷活動的品項
+5. 目前熱賣品項
 
+## 流程
+1. 查詢價格
+首先需要資料來源，目前以原價屋作為資料來源，將來有可能會有別的，先針對原價屋做歷史價格
+每天排程抓資料，抓回本地端先整理成entity
 
-// 查價功能
-// 從網路上不同來源蒐集產品的價格，目前先從原價屋
-// 所以未來可能會抓取不同的目標
-// 回來之後，再分析整理資料，呈現在畫面上
-
-
-
-
-
--- 流程 -- 
-每天排程抓資料
-抓回本地端先整理成entity
+比對本地資料，Create or Update
+產品可能有的狀態：新加入、暫時缺貨、永久停售
 先用現有資料比對新資料，如果沒有這個商品就先Disable
 再比對現有資料，Create or Update
+
+2. 優惠最多
+需要優惠最多，則要先了解定價多少
 
 
 
 -- 結構分析 --
+
+#tbdy 為產品分類的主要element
+#tbdy > tr 表示產品分類
+#tbdy > tr > td.w 表示產品分類編號
+#tbdy > tr > td.t 表示產品分類名稱
+#tbdy > tr > td 有屬性nowarp (child(3)) 表示產品品項下拉選單
+#tbdy > tr > td 有屬性nowarp (child(3)) > select.s > optgroup 代表產品群組 例如 GTX1060
+#tbdy > tr > td 有屬性nowarp (child(3)) > select.s > optgroup > option 代表產品 會寫品名+價格等等
+
+
+
+
 品名 與 價錢，會用半形逗號 , 隔開
 
 class
@@ -38,8 +52,11 @@ b	熱賣 + 價格異動
 ★	參考圖片
 
 
+
+
 商品會有幾種狀況：
 	有效商品
+	option,有value,有$
 		品名, $11111 
 		品名, $11111↘$1111
 	缺貨商品
@@ -53,10 +70,15 @@ b	熱賣 + 價格異動
 如果這個有價錢 又沒有箭頭 就視為商品
 	如果是disable 就跳過他，且要把pointer 清掉 (pointer 為有效的商品，所以如果發現無效的商品就要清空)
 
-
-	
-
 -- 功能分析 --
 
 主功能流程 
 下filter (類別 或 名稱) -> show 列表 -> 選品項 -> show 歷史價格 chart + grid
+
+------------------------------------------------------------------------------------
+
+分功能進行
+先不求一次到位，分隔功能進行開發
+1. 先拿一個分類測試
+2. 儲存資料庫
+3. 資料清理
