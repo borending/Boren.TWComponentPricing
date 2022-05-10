@@ -6,6 +6,17 @@ SELECT concat('"', table_name , '",') FROM information_schema.tables WHERE table
 -- 生出Entity
 Scaffold-DbContext "Host=127.0.0.1;Database=Pricing;Username=postgres" Npgsql.EntityFrameworkCore.PostgreSQL -Tables "Categroy","Product","Brand","Detail","Promotion","PromotionProduct" -UseDatabaseNames -Context PricingDbContext -Force
 
+// 本程式預計的功能
+
+
+// 查價功能
+// 從網路上不同來源蒐集產品的價格，目前先從原價屋
+// 所以未來可能會抓取不同的目標
+// 回來之後，再分析整理資料，呈現在畫面上
+
+
+
+
 
 -- 流程 -- 
 每天排程抓資料

@@ -1,6 +1,8 @@
 ﻿using AngleSharp;
 using AngleSharp.Html.Parser;
+using Boren.TWComponentPricing.Data;
 using Boren.TWComponentPricing.Service;
+using Microsoft.EntityFrameworkCore;
 using PuppeteerSharp;
 using System;
 using System.Collections.Generic;
@@ -115,6 +117,26 @@ namespace Boren.TWComponentPricing.Worker.Service
             }
 
             return entities;
+        }
+
+        public Task SetAsync(IList<Data.Product> products)
+        {
+            var dbContext = new PricingDbContext();
+            var existProducts = dbContext.Products.Include("Categroy").Include("Details").Select(x => x).ToList();
+
+            foreach (var product in products)
+            {
+                var exists = existProducts.Any(x => x.OriginText == product.OriginText && x.Categroy.Name == product.Categroy.Name);
+                if (exists)
+                {
+                    // update
+                }
+                else
+                {
+
+                }
+            }
+            throw new NotImplementedException();
         }
     }
 }
