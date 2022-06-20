@@ -6,6 +6,16 @@ SELECT concat('"', table_name , '",') FROM information_schema.tables WHERE table
 -- 生出Entity
 Scaffold-DbContext "Host=127.0.0.1;Database=Pricing;Username=postgres" Npgsql.EntityFrameworkCore.PostgreSQL -Tables "Categroy","Product","Brand","Detail","Promotion","PromotionProduct" -UseDatabaseNames -Context PricingDbContext -Force
 
+## 資料分析
+0. 定義問題：搜尋歷史價格，判斷現在的價位是高還是低
+1. 蒐集資料：資料從原價屋而來
+2. 處理資料：改善資料品質
+3. 儲存資料：不同屬性有不同環境
+4. 分析資料：資料越多越準確
+5. 使用數據：資料視覺化
+
+-----
+
 ## 目標功能
 1. 查詢單一品項目前價格/歷史價格
 2. 查詢目前優惠最多的品項
