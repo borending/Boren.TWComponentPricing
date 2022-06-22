@@ -1,5 +1,4 @@
 ﻿using Boren.TWComponentPricing.Data;
-using Boren.TWComponentPricing.Model;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -9,6 +8,8 @@ namespace Boren.TWComponentPricing.Worker
     {
         Task<IList<Product>> GetAsync();
 
-        Task SetAsync(IList<Product> products);
+        Task SetAsync(IList<Product> products);  
+        
+        Task GetV2Async();
     }
 }

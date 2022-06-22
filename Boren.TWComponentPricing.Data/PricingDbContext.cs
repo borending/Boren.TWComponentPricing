@@ -23,6 +23,7 @@ namespace Boren.TWComponentPricing.Data
         public virtual DbSet<Product> Products { get; set; }
         public virtual DbSet<Promotion> Promotions { get; set; }
         public virtual DbSet<PromotionProduct> PromotionProducts { get; set; }
+        public virtual DbSet<Raw> Raws { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -128,6 +129,32 @@ namespace Boren.TWComponentPricing.Data
                     .WithMany()
                     .HasForeignKey(d => d.PromotionId)
                     .HasConstraintName("PromotionProduct_PromotionId_fkey");
+            });
+
+            modelBuilder.Entity<Raw>(entity =>
+            {
+                entity.ToTable("Raw");
+
+                entity.Property(e => e.CategroyId).HasComment("分類");
+
+                entity.Property(e => e.Done).HasComment("是否解析完成");
+
+                entity.Property(e => e.FixedText)
+                    .HasMaxLength(255)
+                    .HasComment("清洗之後的字");
+
+                entity.Property(e => e.Time).HasComment("資料抓取的時間");
+
+                entity.HasOne(d => d.Categroy)
+                    .WithMany(p => p.Raws)
+                    .HasForeignKey(d => d.CategroyId)
+                    .HasConstraintName("Raw_CategroyId_fkey");
+
+                entity.HasOne(d => d.RawNavigation)
+                    .WithMany(p => p.InverseRawNavigation)
+                    .HasForeignKey(d => d.RawId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("Raw_RawId_fkey");
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -1,94 +1,102 @@
--- Data �ާ@ --
+﻿-- Data 操作 --
 Microsoft.EntityFrameworkCore.Tools
 Npgsql.EntityFrameworkCore.PostgreSQL
--- �C�X�Ҧ�Table
+-- 列出所有Table
 SELECT concat('"', table_name , '",') FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';
--- �ͥXEntity
-Scaffold-DbContext "Host=127.0.0.1;Database=Pricing;Username=postgres" Npgsql.EntityFrameworkCore.PostgreSQL -Tables "Categroy","Product","Brand","Detail","Promotion","PromotionProduct" -UseDatabaseNames -Context PricingDbContext -Force
+-- 生出Entity
+Scaffold-DbContext "Host=127.0.0.1;Database=Pricing;Username=postgres" Npgsql.EntityFrameworkCore.PostgreSQL -Tables "Categroy","Product","Brand","Detail","Promotion","PromotionProduct","Raw" -UseDatabaseNames -Context PricingDbContext -Force
 
-## ��Ƥ��R
-0. �w�q���D�G�j�M���v����A�P�_�{�b������O���٬O�C
-1. �`����ơG��Ʊq����ΦӨ�
-2. �B�z��ơG�ﵽ��ƫ~��
-3. �x�s��ơG���P�ݩʦ����P����
-4. ���R��ơG��ƶV�h�V�ǽT
-5. �ϥμƾڡG��Ƶ�ı��
+## 資料分析
+0. 定義問題：搜尋歷史價格，判斷現在的價位是高還是低
+1. 蒐集資料：資料從原價屋而來
+2. 處理資料：改善資料品質
+3. 儲存資料：不同屬性有不同環境
+4. 分析資料：資料越多越準確
+5. 使用數據：資料視覺化
 
 -----
 
-## �ؼХ\��
-1. �d�߳�@�~���ثe����/���v����
-2. �d�ߥثe�u�f�̦h���~��
-3. �i�H�n�J�l�ܡA�]�w�~���S���q��
-4. �ثe�����P�P���ʪ��~��
-5. �ثe����~��
-
-## �y�{
-1. �d�߻���
-�����ݭn��ƨӷ��A�ثe�H����Χ@����ƨӷ��A�N�Ӧ��i��|���O���A���w�����ΰ����v����
-�C�ѱƵ{���ơA��^���a�ݥ���z��entity
-
-��糧�a��ơACreate or Update
-���~�i�঳�����A�G�s�[�J�B�Ȯɯʳf�B�ä[����
-���β{����Ƥ��s��ơA�p�G�S���o�Ӱӫ~�N��Disable
-�A���{����ơACreate or Update
-
-2. �u�f�̦h
-�ݭn�u�f�̦h�A�h�n���F�ѩw���h��
+一個選項
+可能是產品，產品+贈品，產品+產品合售
+♥ 開頭代表是廣告
+【狂】代表 可能是組合包，或是有送東西
+如果是箭頭就是補充說明，說明內容也有可能是組合價
 
 
 
--- ���c���R --
+## 目標功能
+1. 查詢單一品項目前價格/歷史價格
+2. 查詢目前優惠最多的品項
+3. 可以登入追蹤，設定品項特價通知
+4. 目前有做促銷活動的品項
+5. 目前熱賣品項
 
-#tbdy �����~�������D�nelement
-#tbdy > tr ���ܲ��~����
-#tbdy > tr > td.w ���ܲ��~�����s��
-#tbdy > tr > td.t ���ܲ��~�����W��
-#tbdy > tr > td ���ݩ�nowarp (child(3)) ���ܲ��~�~���U�Կ��
-#tbdy > tr > td ���ݩ�nowarp (child(3)) > select.s > optgroup �N�����~�s�� �Ҧp GTX1060
-#tbdy > tr > td ���ݩ�nowarp (child(3)) > select.s > optgroup > option �N�����~ �|�g�~�W+���浥��
+## 流程
+1. 查詢價格
+首先需要資料來源，目前以原價屋作為資料來源，將來有可能會有別的，先針對原價屋做歷史價格
+每天排程抓資料，抓回本地端先整理成entity
+
+比對本地資料，Create or Update
+產品可能有的狀態：新加入、暫時缺貨、永久停售
+先用現有資料比對新資料，如果沒有這個商品就先Disable
+再比對現有資料，Create or Update
+
+2. 優惠最多
+需要優惠最多，則要先了解定價多少
+
+
+
+-- 結構分析 --
+
+#tbdy 為產品分類的主要element
+#tbdy > tr 表示產品分類
+#tbdy > tr > td.w 表示產品分類編號
+#tbdy > tr > td.t 表示產品分類名稱
+#tbdy > tr > td 有屬性nowarp (child(3)) 表示產品品項下拉選單
+#tbdy > tr > td 有屬性nowarp (child(3)) > select.s > optgroup 代表產品群組 例如 GTX1060
+#tbdy > tr > td 有屬性nowarp (child(3)) > select.s > optgroup > option 代表產品 會寫品名+價格等等
 
 
 
 
-�~�W �P �����A�|�Υb�γr�� , �j�}
+品名 與 價錢，會用半形逗號 , 隔開
 
 class
-r	����
-g	���沧��
-b	���� + ���沧��
+r	熱賣
+g	價格異動
+b	熱賣 + 價格異動
 
-��	�}�c�Q��
-��	�ѦҹϤ�
-
-
+◆	開箱討論
+★	參考圖片
 
 
-�ӫ~�|���X�ت��p�G
-	���İӫ~
-	option,��value,��$
-		�~�W, $11111 
-		�~�W, $11111��$1111
-	�ʳf�ӫ~
-		�~�W�Ѧһ�$1111 (disabled)
-		�~�W �Ѧһ� $1111 (disabled)
-	�ث~ ���b�Y�A�p�G���b�Y���O�e�@�ӬO�s�i�]�n���L
-		�|��style, disabled, �b�Y(���n)�A�e�������n��pointer
-	�s�i�r�� �S�b�Y
-		disabled, �e��
 
-�p�G�o�Ӧ����� �S�S���b�Y �N�����ӫ~
-	�p�G�Odisable �N���L�L�A�B�n��pointer �M�� (pointer �����Ī��ӫ~�A�ҥH�p�G�o�{�L�Ī��ӫ~�N�n�M��)
 
--- �\����R --
+商品會有幾種狀況：
+	有效商品
+	option,有value,有$
+		品名, $11111 
+		品名, $11111↘$1111
+	缺貨商品
+		品名參考價$1111 (disabled)
+		品名 參考價 $1111 (disabled)
+	贈品 有箭頭，如果有箭頭但是前一個是廣告也要跳過
+		會有style, disabled, 箭頭(必要)，前面必須要有pointer
+	廣告字樣 沒箭頭
+		disabled, 前面
 
-�D�\��y�{ 
-�Ufilter (���O �� �W��) -> show �C�� -> ��~�� -> show ���v���� chart + grid
+如果這個有價錢 又沒有箭頭 就視為商品
+	如果是disable 就跳過他，且要把pointer 清掉 (pointer 為有效的商品，所以如果發現無效的商品就要清空)
+
+-- 功能分析 --
+
+主功能流程 
+下filter (類別 或 名稱) -> show 列表 -> 選品項 -> show 歷史價格 chart + grid
 
 ------------------------------------------------------------------------------------
 
-���\��i��
-�����D�@�����A���j�\��i��}�o
-1. �����@�Ӥ�������
-2. �x�s��Ʈw
-3. ��ƲM�z
+分功能進行
+先不求一次到位，分隔功能進行開發
+1. 先拿一個分類測試
+2. 儲存資料庫
+3. 資料清理

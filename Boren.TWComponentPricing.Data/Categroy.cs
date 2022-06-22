@@ -10,6 +10,7 @@ namespace Boren.TWComponentPricing.Data
         public Categroy()
         {
             Products = new HashSet<Product>();
+            Raws = new HashSet<Raw>();
         }
 
         public int Id { get; set; }
@@ -17,5 +18,6 @@ namespace Boren.TWComponentPricing.Data
         public int Number { get; set; }
 
         public virtual ICollection<Product> Products { get; set; }
+        public virtual ICollection<Raw> Raws { get; set; }
     }
 }

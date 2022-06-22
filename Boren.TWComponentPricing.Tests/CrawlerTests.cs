@@ -28,6 +28,13 @@ namespace Boren.TWComponentPricing.Tests
         }
 
         [Test]
+        public async Task GetV2AsyncTest()
+        {
+            await _crawlerService.GetV2Async();
+            //var json = JsonConvert.SerializeObject(list, Formatting.Indented);
+        }
+
+        [Test]
         public async Task SetAsyncTest()
         {
             var list = await _crawlerService.GetAsync();
